@@ -33,11 +33,10 @@ namespace SocialMediaApp.API
                     policy
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .AllowCredentials()
-                        .WithOrigins("http://localhost:4200", "http://localhost:3000");
+                        .SetIsOriginAllowed(_ => true)
+                        .AllowCredentials();
                 });
             });
-
 
 
             // Add controllers & Swagger
@@ -84,7 +83,7 @@ namespace SocialMediaApp.API
             // EF Core & Identity
             builder.Services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("RemoteConnection"));
             });
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
@@ -130,82 +129,51 @@ namespace SocialMediaApp.API
 
             // Authentication & Google
 
-            //start client helper
-            builder.Logging.ClearProviders();
+            //logger
+            /*builder.Logging.ClearProviders();
             builder.Logging.AddConsole();
-            builder.Logging.SetMinimumLevel(LogLevel.Debug);
-            /*builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-        };
+            builder.Logging.SetMinimumLevel(LogLevel.Debug);*/
 
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                var accessToken = context.Request.Query["access_token"];
 
-                var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) &&
-                    path.StartsWithSegments("/ChatHub"))
+
+            builder.Services.AddAuthentication(options =>
                 {
-                    context.Token = accessToken;
-                }
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings.IssuerIP,
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings.AudienceIP,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecritKey ?? string.Empty))
+                };
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
 
-                return Task.CompletedTask;
-            }
-        };
-    });*/
-            //end client helper
-
-            
-                        builder.Services.AddAuthentication(options =>
-                            {
-                                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-                            })
-                        .AddJwtBearer(options =>
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/ChatHub"))
                         {
-                            options.SaveToken = true;
-                            options.RequireHttpsMetadata = false;
-                            options.TokenValidationParameters = new TokenValidationParameters
-                            {
-                                ValidateIssuer = true,
-                                ValidIssuer = jwtSettings.IssuerIP,
-                                ValidateAudience = true,
-                                ValidAudience = jwtSettings.AudienceIP,
-                                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecritKey ?? string.Empty))
-                            };
-                            options.Events = new JwtBearerEvents
-                            {
-                                OnMessageReceived = context =>
-                                {
-                                    var accessToken = context.Request.Query["access_token"];
-                                    var path = context.HttpContext.Request.Path;
-
-                                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/ChatHub"))
-                                    {
-                                        context.Token = accessToken;
-                                    }
-                                    return Task.CompletedTask;
-                                }
-                            };
-                        })
-                        .AddGoogle(options =>
-                        {
-                            options.ClientId = googleSettings.ClientID;
-                            options.ClientSecret = googleSettings.ClientSecret;
-                        });
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
+            })
+            .AddGoogle(options =>
+            {
+                options.ClientId = googleSettings.ClientID;
+                options.ClientSecret = googleSettings.ClientSecret;
+            });
 
             builder.Services.AddSignalR();
 

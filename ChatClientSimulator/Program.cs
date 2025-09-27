@@ -5,8 +5,10 @@ Console.WriteLine("Starting Chat Client.......");
 Console.Write("Enter Your Token : ");
 var userId = Console.ReadLine();
 
+
 var connection = new HubConnectionBuilder()
-    .WithUrl("http://localhost:5080/ChatHub", options =>
+    .WithUrl("http://localhost:5080/ChatHub",  //URL of host : https://socialmediaapplication.runasp.net/ChatHub
+    options =>
     {
         options.AccessTokenProvider = () => Task.FromResult(userId);
     })
