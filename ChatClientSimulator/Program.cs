@@ -7,7 +7,7 @@ var userId = Console.ReadLine();
 
 
 var connection = new HubConnectionBuilder()
-    .WithUrl("http://localhost:5080/ChatHub",  //URL of host : https://socialmediaapplication.runasp.net/ChatHub
+    .WithUrl("https://socialmediaapplication.runasp.net/ChatHub",  //URL of host : https://socialmediaapplication.runasp.net/ChatHub //self Host : http://localhost:5080/ChatHub
     options =>
     {
         options.AccessTokenProvider = () => Task.FromResult(userId);
