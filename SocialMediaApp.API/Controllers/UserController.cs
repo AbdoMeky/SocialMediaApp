@@ -68,7 +68,7 @@ namespace SocialMediaApp.API.Controllers
 
             return Ok(result);
         }
-        [HttpGet("search/usernameORfulnameORemail")]
+        [HttpGet("search/usernameORNumberOREmail")]
         [Authorize]
         public async Task<IActionResult> Search([FromQuery] string searchKey)
         {
